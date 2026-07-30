@@ -1,7 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import localConfig from '../firebase-applet-config.json';
+
+const firebaseConfig = {
+  apiKey: localConfig.apiKey,
+  authDomain: localConfig.authDomain,
+  projectId: localConfig.projectId,
+  storageBucket: localConfig.storageBucket,
+  messagingSenderId: localConfig.messagingSenderId,
+  appId: localConfig.appId,
+  measurementId: localConfig.measurementId,
+  firestoreDatabaseId: localConfig.firestoreDatabaseId
+};
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -9,6 +20,7 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Connection test
 async function testConnection() {
+
   try {
     // Attempt to fetch a non-existent doc from server to test connection
     await getDocFromServer(doc(db, '_connection_test_', 'ping'));

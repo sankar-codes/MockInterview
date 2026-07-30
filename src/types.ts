@@ -76,6 +76,8 @@ export interface InterviewQuestion {
   hint?: string; // Hint for freshers
   conceptExplanation?: string; // Detailed conceptual explanation
   keyDifferences?: string; // Comparison between user and ideal response
+  keywords?: string[]; // Extracted technical keywords from the response
+  sentiment?: string; // Emotional sentiment of the user response (e.g. Confident, Hesitant, Frustrated, etc.)
   speakingMetrics?: {
     wpm: number;
     fillerCount: number;

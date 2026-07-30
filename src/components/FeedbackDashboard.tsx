@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Trophy, Target, Award, Zap, CheckCircle2, ArrowRight, RefreshCcw, Volume2, VolumeX, Square, ArrowLeft } from 'lucide-react';
+import { Trophy, Target, Award, Zap, CheckCircle2, ArrowRight, RefreshCcw, Volume2, VolumeX, Square, ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { Domain, InterviewQuestion, InterviewFeedback } from '../types';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { generateFinalFeedback } from '../services/geminiService';
 import confetti from 'canvas-confetti';
 import { cn } from '../lib/utils';
@@ -16,6 +18,7 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     loadFeedback();
@@ -36,6 +39,51 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
         colors: ['#f97316', '#ef4444', '#ffffff']
       });
     }
+  };
+
+  
+  const handleDownloadPDF = async () => {
+    setIsExporting(true);
+    // Stop speaking if it's currently speaking to avoid issues
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    
+    setTimeout(async () => {
+      const element = document.getElementById('report-content');
+      if (!element) {
+        setIsExporting(false);
+        return;
+      }
+
+      try {
+        const canvas = await html2canvas(element, { // @ts-ignore
+          scale: 2,
+          backgroundColor: '#0a0a0a',
+          useCORS: true,
+          logging: false,
+          ignoreElements: (node) => {
+            return node.classList && node.classList.contains('hide-on-print');
+          }
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        
+        // Calculate PDF dimensions (A4 proportion is ~1:1.414)
+        // Here we just use the canvas dimensions to make a single long page
+        const pdf = new jsPDF({
+          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+
+        pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`Interview_Report_${domain.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+      } catch (error) {
+        console.error("Failed to generate PDF:", error);
+      } finally {
+        setIsExporting(false);
+      }
+    }, 100);
   };
 
   const speakSummary = () => {
@@ -81,12 +129,12 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto" id="report-content">
         <header className="flex justify-between items-end mb-12">
           <div className="flex items-start gap-4">
             <button 
               onClick={onRestart}
-              className="mt-2 p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-all"
+              className="mt-2 p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-all hide-on-print"
               title="Back to Home"
             >
               <ArrowLeft className="w-6 h-6" />
@@ -96,12 +144,24 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
               <p className="text-gray-400 uppercase tracking-widest font-mono">{domain} • COMPLETED</p>
             </div>
           </div>
-          <button
-            onClick={onRestart}
-            className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
-          >
-            <RefreshCcw className="w-4 h-4" /> New Interview
-          </button>
+          
+          <div className="flex gap-4 hide-on-print">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-6 py-3 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20 rounded-xl transition-all disabled:opacity-50"
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {isExporting ? 'Generating...' : 'Export PDF'}
+            </button>
+            <button
+              onClick={onRestart}
+              className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+            >
+              <RefreshCcw className="w-4 h-4" /> New Interview
+            </button>
+          </div>
+
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -164,7 +224,7 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
                 <button 
                   onClick={speakSummary}
                   className={cn(
-                    "ml-auto p-2 rounded-lg transition-all",
+                    "ml-auto p-2 rounded-lg transition-all hide-on-print",
                     isSpeaking ? "bg-orange-500 text-white animate-pulse" : "bg-white/5 text-gray-400 hover:bg-white/10"
                   )}
                   title={isSpeaking ? "Stop Reading" : "Read Summary"}

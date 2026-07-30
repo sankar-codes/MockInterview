@@ -8,8 +8,9 @@ import "dotenv/config";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const app = express();
+
 async function startServer() {
-  const app = express();
   const PORT = 3000;
   
   app.use(express.json());
@@ -39,7 +40,7 @@ async function startServer() {
 
       const prompt = `
       ${personaPrompts[persona]}
-      You are an expert interviewer for ${domain}. 
+      You are an advanced NLP-driven expert interviewer for ${domain}. 
       The selected difficulty level is ${difficulty}. 
       - If difficulty is 'Easy': Focus on basic concepts, definitions, and simple problem-solving.
       - If difficulty is 'Medium': Focus on practical application, intermediate concepts, and standard interview problems.
@@ -92,7 +93,7 @@ async function startServer() {
       `;
 
       const result = await getAI().models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -150,7 +151,7 @@ async function startServer() {
       User Response: ${responseStr}
       Domain: ${domain}
       
-      Evaluate the response based on correctness, relevance, and communication.
+      Utilize advanced NLP semantics to evaluate the response based on correctness, relevance, and communication.
       
       - Communication Evaluation:
         ${metricsPrompt}
@@ -166,9 +167,13 @@ async function startServer() {
         - Evaluate based on depth, accuracy, and professional communication.
         - If the user's answer is wrong or incomplete, provide the correct/ideal answer.
       
-      - Conceptual Breakdown (Mandatory):
+                  - Conceptual Breakdown (Mandatory):
         - Provide a detailed "Concept Explanation" that explains the underlying principle of the question. 
         - Explain "Why" the answer is what it is.
+
+      - Keyword Extraction & Sentiment Analysis:
+        - Extract 3 to 5 key technical terms or concepts mentioned by the user in their response.
+        - Analyze the user's sentiment/tone (e.g., 'Confident', 'Hesitant', 'Neutral', 'Enthusiastic', 'Frustrated').
 
       - Side-by-Side Comparison (Mandatory):
         - Provide "Key Differences" between the user's response and the ideal answer.
@@ -182,10 +187,12 @@ async function startServer() {
       - pronunciationFeedback: (Feedback on clarity, articulation, and filler words.)
       - conceptExplanation: (Detailed explanation of the concept behind the question. Max 100 words.)
       - keyDifferences: (A summary of the differences between the user response and the ideal answer.)
+      - keywords: (Array of extracted technical keywords from the response)
+      - sentiment: (The detected sentiment of the response)
       `;
 
       const result = await getAI().models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -198,8 +205,13 @@ async function startServer() {
               pronunciationFeedback: { type: Type.STRING },
               conceptExplanation: { type: Type.STRING },
               keyDifferences: { type: Type.STRING },
+              keywords: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
+              sentiment: { type: Type.STRING },
             },
-            required: ["score", "feedback", "pronunciationFeedback", "conceptExplanation", "keyDifferences"],
+            required: ["score", "feedback", "pronunciationFeedback", "conceptExplanation", "keyDifferences", "keywords", "sentiment"],
           },
         },
       });
@@ -229,7 +241,7 @@ async function startServer() {
       `;
 
       const result = await getAI().models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -276,7 +288,7 @@ async function startServer() {
       `;
 
       const result = await getAI().models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -351,9 +363,13 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();
+
+export default app;

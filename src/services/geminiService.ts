@@ -13,7 +13,10 @@ export const generateNextQuestion = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ domain, previousQuestions, userPerformance, resumeOrJD, difficulty, persona })
   });
-  if (!response.ok) throw new Error('Failed to generate question');
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to generate question');
+  }
   return response.json();
 };
 
@@ -28,13 +31,16 @@ export const evaluateResponse = async (
     fillersUsed: Record<string, number>;
     durationSeconds: number;
   }
-): Promise<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback: string; conceptExplanation?: string; keyDifferences?: string }> => {
+): Promise<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback: string; conceptExplanation?: string; keyDifferences?: string; keywords?: string[]; sentiment?: string }> => {
   const response = await fetch('/api/evaluate-response', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, responseStr, domain, persona, speakingMetrics })
   });
-  if (!response.ok) throw new Error('Failed to evaluate response');
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to evaluate response');
+  }
   return response.json();
 };
 
@@ -47,7 +53,10 @@ export const generateFinalFeedback = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ domain, questions })
   });
-  if (!response.ok) throw new Error('Failed to generate feedback');
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to generate feedback');
+  }
   return response.json();
 };
 
@@ -59,7 +68,10 @@ export const generateRoadmap = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ interviews })
   });
-  if (!response.ok) throw new Error('Failed to generate roadmap');
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to generate roadmap');
+  }
   return response.json();
 };
 

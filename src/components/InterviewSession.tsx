@@ -227,9 +227,10 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
   const [userInput, setUserInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastFeedback, setLastFeedback] = useState<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback?: string; conceptExplanation?: string; keyDifferences?: string } | null>(null);
+  const [lastFeedback, setLastFeedback] = useState<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback?: string; conceptExplanation?: string; keyDifferences?: string ; keywords?: string[]; sentiment?: string; } | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120); // 2 minutes per question
   const [showHint, setShowHint] = useState(false);
@@ -361,8 +362,11 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
       setTimeLeft(120);
       setIsLoading(false);
       speak(firstQData.text);
-    } catch (error) {
-      if (isMounted.current) setIsLoading(false);
+    } catch (error: any) {
+      if (isMounted.current) {
+        setIsLoading(false);
+        setErrorMsg(error.message || 'An error occurred during initialization.');
+      }
     }
   };
 
@@ -476,6 +480,8 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
         pronunciationFeedback: evaluation.pronunciationFeedback,
         conceptExplanation: evaluation.conceptExplanation,
         keyDifferences: evaluation.keyDifferences,
+        keywords: evaluation.keywords,
+        sentiment: evaluation.sentiment,
         speakingMetrics: finalMetrics ? {
           wpm: finalMetrics.wpm,
           fillerCount: finalMetrics.fillerCount,
@@ -628,6 +634,12 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
       </div>
 
       <main className="flex-1 flex flex-col items-center p-6 gap-6 overflow-hidden">
+        {errorMsg && (
+          <div className="w-full max-w-4xl p-4 bg-red-500/10 border border-red-500 text-red-500 rounded-lg text-center mb-4">
+            <AlertCircle className="w-5 h-5 inline-block mr-2" />
+            {errorMsg}
+          </div>
+        )}
         {/* Interview Content */}
         <div className="w-full max-w-4xl flex flex-col gap-6 h-full">
           <div className="flex-1 bg-[#151619] rounded-2xl p-8 border border-white/10 flex flex-col justify-center relative overflow-y-auto">
@@ -800,6 +812,24 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
                             <p className="text-gray-300 text-sm italic">"{lastFeedback.correctAnswer || "The response you provided was accurate."}"</p>
                           </div>
                         </div>
+
+                        {lastFeedback.keywords && lastFeedback.keywords.length > 0 && (
+                          <div className="mt-4 p-4 bg-teal-500/5 border border-teal-500/10 rounded-xl">
+                            <p className="text-teal-400 font-bold text-[10px] uppercase tracking-widest mb-2">Extracted Keywords</p>
+                            <div className="flex flex-wrap gap-2">
+                              {lastFeedback.keywords.map((kw, i) => (
+                                <span key={i} className="px-2 py-1 bg-teal-500/10 text-teal-300 rounded text-xs">{kw}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {lastFeedback.sentiment && (
+                          <div className="mt-4 p-4 bg-orange-500/5 border border-orange-500/10 rounded-xl">
+                            <p className="text-orange-400 font-bold text-[10px] uppercase tracking-widest mb-1">Response Sentiment</p>
+                            <p className="text-gray-400 text-sm leading-relaxed capitalize">{lastFeedback.sentiment}</p>
+                          </div>
+                        )}
 
                         {lastFeedback.keyDifferences && (
                           <div className="mt-4 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
