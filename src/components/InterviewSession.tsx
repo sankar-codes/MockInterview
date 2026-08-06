@@ -4,6 +4,7 @@ import { Mic, MicOff, Send, Loader2, ChevronRight, AlertCircle, Volume2, VolumeX
 import { Domain, InterviewQuestion, InterviewerPersona } from '../types';
 import { generateNextQuestion, evaluateResponse } from '../services/geminiService';
 import { cn } from '../lib/utils';
+import Editor from '@monaco-editor/react';
 
 interface InterviewSessionProps {
   domain: Domain;
@@ -226,9 +227,10 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [userInput, setUserInput] = useState('');
+  const [codeContent, setCodeContent] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastFeedback, setLastFeedback] = useState<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback?: string; conceptExplanation?: string; keyDifferences?: string ; keywords?: string[]; sentiment?: string; } | null>(null);
+  const [lastFeedback, setLastFeedback] = useState<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback?: string; conceptExplanation?: string; keyDifferences?: string ; keywords?: string[]; sentiment?: string; codeComplexity?: { time: string; space: string; qualityScore: number; }; } | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -304,7 +306,7 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
   // Recalculate speech metrics in perfect reactive synchrony
   useEffect(() => {
     if (hasUsedMic && userInput) {
-      const stats = calculateMetrics(userInput, speechDuration);
+      const stats = calculateMetrics(currentQuestion?.isCodingQuestion ? codeContent : userInput, speechDuration);
       setSpeechWpm(stats.wpm);
       setFillerCount(stats.fillerCount);
       setFillersUsed(stats.fillersUsed);
@@ -443,7 +445,8 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
   };
 
   const handleSubmit = async () => {
-    if (!userInput.trim() || isLoading) return;
+    const finalInput = currentQuestion?.isCodingQuestion ? codeContent : userInput;
+    if (!finalInput.trim() || isLoading) return;
 
     // Ensure speech recognition is stopped before submission
     if (isListening) {
@@ -467,7 +470,7 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
         durationSeconds: Math.max(1, Math.round(speechDuration))
       } : undefined;
 
-      const evaluation = await evaluateResponse(currentQ.text, userInput, domain, persona, finalMetrics, language);
+      const evaluation = await evaluateResponse(currentQ.text, finalInput, domain, persona, finalMetrics, language);
       if (!isMounted.current) return;
       
       setLastFeedback(evaluation);
@@ -476,7 +479,7 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
       const updatedQuestions = [...questions];
       updatedQuestions[currentIndex] = {
         ...currentQ,
-        userResponse: userInput,
+        userResponse: finalInput,
         aiEvaluation: evaluation.feedback,
         score: evaluation.score,
         correctAnswer: evaluation.correctAnswer,
@@ -524,6 +527,7 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
         setTimeLeft(120);
         setShowHint(false);
         setUserInput('');
+      setCodeContent('');
         setLastFeedback(null);
         setShowFeedback(false);
         setIsLoading(false);
@@ -586,6 +590,9 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
   };
 
   const currentQuestion = questions[currentIndex];
+  const isCoding = currentQuestion?.isCodingQuestion;
+  const codingLang = currentQuestion?.codingLanguage || 'javascript';
+  
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
@@ -808,11 +815,27 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
                         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
                             <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mb-2">Your Response</p>
-                            <p className="text-gray-300 text-sm italic">"{userInput}"</p>
+                            {isCoding ? (
+                              <div className="mt-2 rounded overflow-hidden text-xs max-h-[200px] overflow-y-auto">
+                                <SyntaxHighlighter language={codingLang.toLowerCase()} style={vscDarkPlus}>
+                                  {isCoding ? codeContent : userInput}
+                                </SyntaxHighlighter>
+                              </div>
+                            ) : (
+                              <p className="text-gray-300 text-sm italic">"{userInput}"</p>
+                            )}
                           </div>
                           <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-xl">
                             <p className="text-orange-500 font-bold text-[10px] uppercase tracking-widest mb-2">Ideal Response</p>
-                            <p className="text-gray-300 text-sm italic">"{lastFeedback.correctAnswer || "The response you provided was accurate."}"</p>
+                            {isCoding && lastFeedback.correctAnswer ? (
+                              <div className="mt-2 rounded overflow-hidden text-xs max-h-[200px] overflow-y-auto">
+                                <SyntaxHighlighter language={codingLang.toLowerCase()} style={vscDarkPlus}>
+                                  {lastFeedback.correctAnswer}
+                                </SyntaxHighlighter>
+                              </div>
+                            ) : (
+                              <p className="text-gray-300 text-sm italic">"{lastFeedback.correctAnswer || "The response you provided was accurate."}"</p>
+                            )}
                           </div>
                         </div>
 
@@ -845,7 +868,29 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
                           </div>
                         )}
 
+                        
+                        {lastFeedback.codeComplexity && (
+                          <div className="mt-4 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
+                            <p className="text-emerald-400 font-bold text-[10px] uppercase tracking-widest mb-3">Code Complexity Evaluation</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                                <span className="text-[10px] font-black uppercase text-gray-500 block mb-1">Time Complexity</span>
+                                <span className="text-sm font-bold text-emerald-300 font-mono">{lastFeedback.codeComplexity.time}</span>
+                              </div>
+                              <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                                <span className="text-[10px] font-black uppercase text-gray-500 block mb-1">Space Complexity</span>
+                                <span className="text-sm font-bold text-emerald-300 font-mono">{lastFeedback.codeComplexity.space}</span>
+                              </div>
+                              <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                                <span className="text-[10px] font-black uppercase text-gray-500 block mb-1">Quality Score</span>
+                                <span className="text-sm font-bold text-emerald-300 font-mono">{lastFeedback.codeComplexity.qualityScore}/100</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
                         {lastFeedback.conceptExplanation && (
+
                           <div className="mt-4 p-4 bg-purple-500/5 border border-purple-500/10 rounded-xl">
                             <p className="text-purple-400 font-bold text-[10px] uppercase tracking-widest mb-1">Conceptual Breakdown</p>
                             <p className="text-gray-400 text-sm leading-relaxed">{lastFeedback.conceptExplanation}</p>
@@ -1043,7 +1088,7 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    Submit Response <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    {isCoding ? 'Submit Code for Evaluation' : 'Submit Response'} <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
               </button>

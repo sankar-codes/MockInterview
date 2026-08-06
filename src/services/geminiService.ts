@@ -8,7 +8,7 @@ export const generateNextQuestion = async (
   difficulty: 'Easy' | 'Medium' | 'Hard' = 'Medium',
   persona: InterviewerPersona = 'Friendly',
   language: string = 'en-US'
-): Promise<{ text: string; isCodeSnippet: boolean; options?: string[]; hint?: string }> => {
+): Promise<{ text: string; isCodeSnippet: boolean; options?: string[]; hint?: string; isCodingQuestion?: boolean; codingLanguage?: string; }> => {
   const response = await fetch('/api/generate-question', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -33,7 +33,7 @@ export const evaluateResponse = async (
     durationSeconds: number;
   },
   language: string = 'en-US'
-): Promise<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback: string; conceptExplanation?: string; keyDifferences?: string; keywords?: string[]; sentiment?: string }> => {
+): Promise<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback: string; conceptExplanation?: string; keyDifferences?: string; keywords?: string[]; sentiment?: string; codeComplexity?: { time: string; space: string; qualityScore: number; }; }> => {
   const response = await fetch('/api/evaluate-response', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

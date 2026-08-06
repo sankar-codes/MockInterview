@@ -34,6 +34,9 @@ async function startServer() {
       const { domain, previousQuestions, userPerformance, resumeOrJD, difficulty, persona, language = 'en-US' } = req.body;
       const personaPrompts: Record<string, string> = {
         'Friendly': 'You are a warm, encouraging, and supportive interviewer. You want the candidate to succeed. Use a conversational and kind tone.',
+        'Professional': 'You are highly professional, objective, and structured. You follow standard corporate interviewing practices.',
+        'Strict': 'You are a strict, no-nonsense interviewer who expects perfect answers. You are hard to please.',
+        'HR': 'You are an HR manager. You care about cultural fit, behavioral traits, conflict resolution, and teamwork.',
         'Stern': 'You are a no-nonsense, strict, and highly formal interviewer. You are difficult to impress and maintain a professional, cold distance. Your questions are direct and sharp.',
         'Technical Expert': 'You are a deep-dive technical specialist. You care only about technical precision, edge cases, and architectural depth. You skip small talk and go straight for the hardest technical details.'
       };
@@ -70,14 +73,21 @@ async function startServer() {
         - Focus on standard, high-frequency interview questions.
         - Prioritize code-based problem-solving questions.
       
-      - If the domain is a Quiz-style round (Aptitude & Reasoning, or any domain ending with '(Quiz)'):
+            - If the domain is a Quiz-style round (Aptitude & Reasoning, or any domain ending with '(Quiz)'):
         - Provide a multiple-choice question (Quiz style).
         - If it's a coding quiz (C, Java, Python, C++ Programming (Quiz)):
           - Focus on "Error Detection" or "Output Guessing".
           - ALWAYS set isCodeSnippet to true and include the code block in the question text.
         - Include 4 distinct options (A, B, C, D).
         - Ensure the code is formatted correctly.
-
+        
+      - If the domain is a Coding Interview (e.g. 'Python Programming', 'Java Programming', 'JavaScript Programming', 'C/C++ Programming', 'Data Structures and Algorithms (DSA)'):
+        - Provide a standard Data Structures or Algorithms coding problem (e.g., LeetCode style).
+        - Set 'isCodingQuestion' to true.
+        - Provide the problem description clearly.
+        - You don't need options.
+        - Set 'codingLanguage' to the requested language (e.g., 'python', 'java', 'javascript', 'cpp'). If DSA, pick a language like 'javascript' or leave empty.
+        
       - Granular Difficulty Scaling (Relative to the base difficulty '${difficulty}'):
         - If the last score was 81-100: Increase complexity significantly. Ask a "Hard" level question.
         - If the last score was 61-80: Increase complexity slightly.
@@ -163,6 +173,13 @@ async function startServer() {
         - Compare the user's selected option with the correct answer.
         - If correct, score 100. If wrong, score 0 and provide the correct option with a brief explanation.
       
+            - For Coding Questions:
+        - If the user submitted code, evaluate it rigorously.
+        - Determine Time Complexity and Space Complexity.
+        - Evaluate Code Quality (0-100).
+        - Provide the ideal optimal code in 'correctAnswer'.
+        - The 'codeComplexity' object MUST be populated.
+        
       - For other domains:
         - Evaluate based on depth, accuracy, and professional communication.
         - If the user's answer is wrong or incomplete, provide the correct/ideal answer.
@@ -210,6 +227,14 @@ async function startServer() {
                 items: { type: Type.STRING }
               },
               sentiment: { type: Type.STRING },
+              codeComplexity: {
+                type: Type.OBJECT,
+                properties: {
+                  time: { type: Type.STRING },
+                  space: { type: Type.STRING },
+                  qualityScore: { type: Type.NUMBER }
+                }
+              }
             },
             required: ["score", "feedback", "pronunciationFeedback", "conceptExplanation", "keyDifferences", "keywords", "sentiment"],
           },

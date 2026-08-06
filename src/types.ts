@@ -1,4 +1,4 @@
-export type InterviewerPersona = 'Friendly' | 'Stern' | 'Technical Expert';
+export type InterviewerPersona = 'Friendly' | 'Stern' | 'Technical Expert' | 'Professional' | 'Strict' | 'HR';
 
 export type Domain = 
   | 'Frontend Development' 
@@ -37,6 +37,15 @@ export type Domain =
   | 'LTIMindtree'
   | 'Mphasis'
   | 'Core Fundamentals (Fresher)'
+  | 'Data Structures and Algorithms (DSA)'
+  | 'Database Management System (DBMS)'
+  | 'Operating Systems (OS)'
+  | 'Computer Networks'
+  | 'Object-Oriented Programming (OOP)'
+  | 'Python Programming'
+  | 'Java Programming'
+  | 'JavaScript Programming'
+  | 'C/C++ Programming'
   | 'System Design'
   | 'Database Management'
   | 'Embedded Systems'
@@ -72,6 +81,9 @@ export interface InterviewQuestion {
   correctAnswer?: string; // AI provides the correct answer if user is wrong
   pronunciationFeedback?: string; // AI provides feedback on clarity and articulation
   isCodeSnippet?: boolean; // If the question contains a code snippet
+  isCodingQuestion?: boolean; // True if the user needs to write code
+  codingLanguage?: string;
+  codeComplexity?: { time: string; space: string; qualityScore: number; };
   options?: string[]; // For quiz-style questions (e.g., Aptitude)
   hint?: string; // Hint for freshers
   conceptExplanation?: string; // Detailed conceptual explanation
