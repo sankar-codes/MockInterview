@@ -126,10 +126,10 @@ async function startServer() {
       res.json(JSON.parse(result.text || '{"text": "Could you tell me more about your experience?", "isCodeSnippet": false, "hint": "Think about your background."}'));
     } catch (e: any) {
       console.error(e);
-      if (e.message?.includes("API key not valid") || e.status === "INVALID_ARGUMENT") {
+      if (e.message?.includes("API key not valid") || e.status === "INVALID_ARGUMENT" || e.message?.includes("API_KEY_INVALID")) {
         return res.status(500).json({ error: "Invalid Gemini API Key. Please provide a valid key in your settings." });
       }
-      res.json({ text: "Could you tell me more about your experience?", isCodeSnippet: false, hint: "Think about your background." });
+      res.status(500).json({ error: "Failed to generate question: " + (e.message || "Unknown error") });
     }
   });
 
@@ -242,9 +242,12 @@ async function startServer() {
       });
 
       res.json(JSON.parse(result.text || '{"score": 50, "feedback": "Good effort.", "pronunciationFeedback": "Try to speak more clearly."}'));
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      res.json({ score: 50, feedback: "Good effort.", pronunciationFeedback: "Try to speak more clearly." });
+      if (e.message?.includes("API key not valid") || e.status === "INVALID_ARGUMENT" || e.message?.includes("API_KEY_INVALID")) {
+        return res.status(500).json({ error: "Invalid Gemini API Key. Please provide a valid key in your settings." });
+      }
+      res.status(500).json({ error: "Failed to evaluate response: " + (e.message || "Unknown error") });
     }
   });
 
@@ -306,9 +309,12 @@ async function startServer() {
       });
 
       res.json(JSON.parse(result.text || "{}"));
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      res.json({ overallScore: 0, communicationScore: 0, technicalScore: 0, confidenceScore: 0, summary: "Evaluation failed.", suggestions: [] });
+      if (e.message?.includes("API key not valid") || e.status === "INVALID_ARGUMENT" || e.message?.includes("API_KEY_INVALID")) {
+        return res.status(500).json({ error: "Invalid Gemini API Key. Please provide a valid key in your settings." });
+      }
+      res.status(500).json({ error: "Failed to generate feedback: " + (e.message || "Unknown error") });
     }
   });
 
@@ -360,9 +366,12 @@ async function startServer() {
       });
 
       res.json(JSON.parse(result.text || "{}"));
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      res.json({ title: "Your Career Roadmap", steps: [] });
+      if (e.message?.includes("API key not valid") || e.status === "INVALID_ARGUMENT" || e.message?.includes("API_KEY_INVALID")) {
+        return res.status(500).json({ error: "Invalid Gemini API Key. Please provide a valid key in your settings." });
+      }
+      res.status(500).json({ error: "Failed to generate roadmap: " + (e.message || "Unknown error") });
     }
   });
 
