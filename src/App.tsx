@@ -68,6 +68,7 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
   const [persona, setPersona] = useState<InterviewerPersona>('Friendly');
   const [resumeOrJD, setResumeOrJD] = useState<string>('');
+  const [language, setLanguage] = useState('en-US');
   const [interviewResults, setInterviewResults] = useState<InterviewQuestion[]>([]);
   const [pastInterviews, setPastInterviews] = useState<any[]>([]);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -104,7 +105,7 @@ export default function App() {
 
   const handleLogout = () => signOut(auth);
 
-  const handleStart = (domain: Domain, jd?: string, diff: 'Easy' | 'Medium' | 'Hard' = 'Medium', selectedPersona: InterviewerPersona = 'Friendly') => {
+  const handleStart = (domain: Domain, jd?: string, diff: 'Easy' | 'Medium' | 'Hard' = 'Medium', selectedPersona: InterviewerPersona = 'Friendly', selectedLanguage: string = 'en-US') => {
     if (!user) {
       setShowAuthModal(true);
       return;
@@ -112,6 +113,7 @@ export default function App() {
     setSelectedDomain(domain);
     setDifficulty(diff);
     setPersona(selectedPersona);
+    setLanguage(selectedLanguage);
     if (jd) setResumeOrJD(jd);
     setView('session');
   };
@@ -300,6 +302,7 @@ export default function App() {
             difficulty={difficulty}
             persona={persona}
             resumeOrJD={resumeOrJD}
+            language={language}
             onComplete={handleComplete} 
             onCancel={handleRestart}
           />

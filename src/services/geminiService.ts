@@ -6,12 +6,13 @@ export const generateNextQuestion = async (
   userPerformance: number,
   resumeOrJD?: string,
   difficulty: 'Easy' | 'Medium' | 'Hard' = 'Medium',
-  persona: InterviewerPersona = 'Friendly'
+  persona: InterviewerPersona = 'Friendly',
+  language: string = 'en-US'
 ): Promise<{ text: string; isCodeSnippet: boolean; options?: string[]; hint?: string }> => {
   const response = await fetch('/api/generate-question', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ domain, previousQuestions, userPerformance, resumeOrJD, difficulty, persona })
+    body: JSON.stringify({ domain, previousQuestions, userPerformance, resumeOrJD, difficulty, persona, language })
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -30,12 +31,13 @@ export const evaluateResponse = async (
     fillerCount: number;
     fillersUsed: Record<string, number>;
     durationSeconds: number;
-  }
+  },
+  language: string = 'en-US'
 ): Promise<{ score: number; feedback: string; correctAnswer?: string; pronunciationFeedback: string; conceptExplanation?: string; keyDifferences?: string; keywords?: string[]; sentiment?: string }> => {
   const response = await fetch('/api/evaluate-response', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, responseStr, domain, persona, speakingMetrics })
+    body: JSON.stringify({ question, responseStr, domain, persona, speakingMetrics, language })
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -74,4 +76,3 @@ export const generateRoadmap = async (
   }
   return response.json();
 };
-

@@ -3,7 +3,8 @@ import { motion } from 'motion/react';
 import { Trophy, Target, Award, Zap, CheckCircle2, ArrowRight, RefreshCcw, Volume2, VolumeX, Square, ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { Domain, InterviewQuestion, InterviewFeedback } from '../types';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
+
 import { generateFinalFeedback } from '../services/geminiService';
 import confetti from 'canvas-confetti';
 import { cn } from '../lib/utils';
@@ -42,42 +43,168 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
   };
 
   
-  const handleDownloadPDF = async () => {
+  
+  const handleDownloadPDF = () => {
+    if (!feedback) return;
     setIsExporting(true);
-    // Stop speaking if it's currently speaking to avoid issues
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
     
-    setTimeout(async () => {
-      const element = document.getElementById('report-content');
-      if (!element) {
-        setIsExporting(false);
-        return;
-      }
-
+    setTimeout(() => {
       try {
-        const canvas = await html2canvas(element, { // @ts-ignore
-          scale: 2,
-          backgroundColor: '#0a0a0a',
-          useCORS: true,
-          logging: false,
-          ignoreElements: (node) => {
-            return node.classList && node.classList.contains('hide-on-print');
-          }
-        });
-
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const doc = new jsPDF();
         
-        // Calculate PDF dimensions (A4 proportion is ~1:1.414)
-        // Here we just use the canvas dimensions to make a single long page
-        const pdf = new jsPDF({
-          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-          unit: 'px',
-          format: [canvas.width, canvas.height]
+        // Title
+        doc.setFontSize(22);
+        doc.setTextColor(249, 115, 22); // Orange
+        doc.text('Interview Performance Report', 14, 20);
+        
+        // Meta
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Domain: ${domain}`, 14, 30);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 38);
+        
+        // Scores
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Scores', 14, 50);
+        
+        autoTable(doc, {
+          startY: 55,
+          head: [['Metric', 'Score']],
+          body: [
+            ['Overall Score', `${feedback.overallScore}/100`],
+            ['Technical Score', `${feedback.technicalScore}/100`],
+            ['Communication Score', `${feedback.communicationScore}/100`],
+            ['Confidence Score', `${feedback.confidenceScore}/100`]
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [249, 115, 22] },
         });
-
-        pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`Interview_Report_${domain.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+        
+        // Summary & Readiness
+        let nextY = (doc as any).lastAutoTable.finalY + 15;
+        doc.setFontSize(14);
+        doc.setTextColor(249, 115, 22);
+        doc.text('Summary', 14, nextY);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(50, 50, 50);
+        const summaryLines = doc.splitTextToSize(feedback.summary, 180);
+        doc.text(summaryLines, 14, nextY + 8);
+        
+        nextY += 8 + (summaryLines.length * 6) + 10;
+        
+        if (feedback.interviewReadiness) {
+          doc.setFontSize(14);
+          doc.setTextColor(249, 115, 22);
+          doc.text('Interview Readiness', 14, nextY);
+          
+          doc.setFontSize(11);
+          doc.setTextColor(50, 50, 50);
+          const readinessLines = doc.splitTextToSize(feedback.interviewReadiness, 180);
+          doc.text(readinessLines, 14, nextY + 8);
+          nextY += 8 + (readinessLines.length * 6) + 10;
+        }
+        
+        // Strengths & Weaknesses
+        if (nextY > 250) {
+          doc.addPage();
+          nextY = 20;
+        }
+        
+        if (feedback.strengths && feedback.strengths.length > 0) {
+          doc.setFontSize(14);
+          doc.setTextColor(40, 167, 69); // Green
+          doc.text('Strengths', 14, nextY);
+          
+          doc.setFontSize(11);
+          doc.setTextColor(50, 50, 50);
+          feedback.strengths.forEach((s, i) => {
+            const lines = doc.splitTextToSize(`• ${s}`, 180);
+            doc.text(lines, 14, nextY + 8 + (i * 6));
+          });
+          nextY += 8 + (feedback.strengths.length * 6) + 10;
+        }
+        
+        if (feedback.weaknesses && feedback.weaknesses.length > 0) {
+          if (nextY > 250) { doc.addPage(); nextY = 20; }
+          
+          doc.setFontSize(14);
+          doc.setTextColor(220, 53, 69); // Red
+          doc.text('Areas for Improvement', 14, nextY);
+          
+          doc.setFontSize(11);
+          doc.setTextColor(50, 50, 50);
+          feedback.weaknesses.forEach((w, i) => {
+            const lines = doc.splitTextToSize(`• ${w}`, 180);
+            doc.text(lines, 14, nextY + 8 + (i * 6));
+          });
+          nextY += 8 + (feedback.weaknesses.length * 6) + 10;
+        }
+        
+        // Recommended Topics
+        if (feedback.recommendedTopics && feedback.recommendedTopics.length > 0) {
+          if (nextY > 250) { doc.addPage(); nextY = 20; }
+          
+          doc.setFontSize(14);
+          doc.setTextColor(0, 123, 255); // Blue
+          doc.text('Recommended Topics to Study', 14, nextY);
+          
+          doc.setFontSize(11);
+          doc.setTextColor(50, 50, 50);
+          feedback.recommendedTopics.forEach((t, i) => {
+            const lines = doc.splitTextToSize(`• ${t}`, 180);
+            doc.text(lines, 14, nextY + 8 + (i * 6));
+          });
+          nextY += 8 + (feedback.recommendedTopics.length * 6) + 10;
+        }
+        
+        // Detailed Q&A
+        doc.addPage();
+        doc.setFontSize(18);
+        doc.setTextColor(249, 115, 22);
+        doc.text('Detailed Q&A Breakdown', 14, 20);
+        
+        let qaY = 30;
+        
+        questions.forEach((q, index) => {
+          if (qaY > 250) {
+            doc.addPage();
+            qaY = 20;
+          }
+          
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          const qLines = doc.splitTextToSize(`Q${index + 1}: ${q.text}`, 180);
+          doc.text(qLines, 14, qaY);
+          qaY += (qLines.length * 6) + 4;
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.setTextColor(80, 80, 80);
+          const aLines = doc.splitTextToSize(`Your Answer: ${q.userResponse || 'No response'}`, 180);
+          doc.text(aLines, 14, qaY);
+          qaY += (aLines.length * 5) + 4;
+          
+          if (q.aiEvaluation) {
+            doc.setTextColor(40, 167, 69); // Greenish
+            const fLines = doc.splitTextToSize(`Feedback: ${q.aiEvaluation}`, 180);
+            doc.text(fLines, 14, qaY);
+            qaY += (fLines.length * 5) + 4;
+          }
+          
+          if (q.correctAnswer) {
+            doc.setTextColor(0, 123, 255);
+            const caLines = doc.splitTextToSize(`Ideal Answer: ${q.correctAnswer}`, 180);
+            doc.text(caLines, 14, qaY);
+            qaY += (caLines.length * 5) + 4;
+          }
+          
+          qaY += 6; // Spacing between questions
+        });
+        
+        doc.save(`Interview_Report_${domain.replace(/[^a-z0-9]/gi, '_')}.pdf`);
       } catch (error) {
         console.error("Failed to generate PDF:", error);
       } finally {
@@ -246,6 +373,7 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
             animate={{ opacity: 1, x: 0 }}
             className="bg-[#151619] border border-white/10 rounded-2xl p-8"
           >
+            
             <h3 className="text-xl font-bold mb-6 uppercase tracking-widest text-orange-500">Improvement Plan</h3>
             <ul className="space-y-4">
               {feedback?.suggestions.map((suggestion, i) => (
@@ -255,6 +383,56 @@ export const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ domain, qu
                 </li>
               ))}
             </ul>
+            
+            {feedback?.strengths && feedback.strengths.length > 0 && (
+              <div className="mt-8">
+                <h4 className="text-lg font-bold mb-4 uppercase tracking-widest text-green-500">Strengths Demonstrated</h4>
+                <ul className="space-y-3">
+                  {feedback.strengths.map((s, i) => (
+                    <li key={i} className="flex gap-3 items-start">
+                      <div className="mt-2 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                      <p className="text-gray-400 text-sm">{s}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {feedback?.weaknesses && feedback.weaknesses.length > 0 && (
+              <div className="mt-8">
+                <h4 className="text-lg font-bold mb-4 uppercase tracking-widest text-red-500">Areas for Improvement</h4>
+                <ul className="space-y-3">
+                  {feedback.weaknesses.map((w, i) => (
+                    <li key={i} className="flex gap-3 items-start">
+                      <div className="mt-2 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                      <p className="text-gray-400 text-sm">{w}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {feedback?.recommendedTopics && feedback.recommendedTopics.length > 0 && (
+              <div className="mt-8">
+                <h4 className="text-lg font-bold mb-4 uppercase tracking-widest text-blue-500">Recommended Topics to Study</h4>
+                <ul className="space-y-3">
+                  {feedback.recommendedTopics.map((t, i) => (
+                    <li key={i} className="flex gap-3 items-start">
+                      <div className="mt-2 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                      <p className="text-gray-400 text-sm">{t}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {feedback?.interviewReadiness && (
+              <div className="mt-8 p-4 bg-white/5 border border-white/10 rounded-xl">
+                <h4 className="text-xs font-black mb-2 uppercase tracking-widest text-gray-500">Interview Readiness</h4>
+                <p className="text-sm font-semibold text-white">{feedback.interviewReadiness}</p>
+              </div>
+            )}
+
           </motion.div>
 
           <motion.div

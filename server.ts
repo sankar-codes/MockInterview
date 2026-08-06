@@ -31,7 +31,7 @@ async function startServer() {
 
   app.post("/api/generate-question", async (req, res) => {
     try {
-      const { domain, previousQuestions, userPerformance, resumeOrJD, difficulty, persona } = req.body;
+      const { domain, previousQuestions, userPerformance, resumeOrJD, difficulty, persona, language = 'en-US' } = req.body;
       const personaPrompts: Record<string, string> = {
         'Friendly': 'You are a warm, encouraging, and supportive interviewer. You want the candidate to succeed. Use a conversational and kind tone.',
         'Stern': 'You are a no-nonsense, strict, and highly formal interviewer. You are difficult to impress and maintain a professional, cold distance. Your questions are direct and sharp.',
@@ -125,7 +125,7 @@ async function startServer() {
 
   app.post("/api/evaluate-response", async (req, res) => {
     try {
-      const { question, responseStr, domain, persona, speakingMetrics } = req.body;
+      const { question, responseStr, domain, persona, speakingMetrics, language = 'en-US' } = req.body;
       const personaPrompts: Record<string, string> = {
         'Friendly': 'Provide feedback in an encouraging and constructive way. Even if they are wrong, be kind and offer helpful tips.',
         'Stern': 'Provide feedback in a direct, blunt, and strictly professional manner. Do not sugarcoat anything. If they are wrong, state it clearly and move on.',
@@ -151,7 +151,7 @@ async function startServer() {
       User Response: ${responseStr}
       Domain: ${domain}
       
-      Utilize advanced NLP semantics to evaluate the response based on correctness, relevance, and communication.
+      Utilize advanced NLP semantics to evaluate the response based on correctness, relevance, and communication. ALL feedback, explanations, and text in the JSON output MUST be in the language specified by the locale code: ${language}.
       
       - Communication Evaluation:
         ${metricsPrompt}
@@ -238,6 +238,10 @@ async function startServer() {
       - confidenceScore: (0-100)
       - summary: (A brief summary of performance)
       - suggestions: (Array of 3-5 specific improvement tips)
+      - strengths: (Array of 2-4 key strengths demonstrated)
+      - weaknesses: (Array of 2-4 areas needing improvement)
+      - recommendedTopics: (Array of 3-5 topics to study next)
+      - interviewReadiness: (A short statement on their readiness for real interviews)
       `;
 
       const result = await getAI().models.generateContent({
@@ -257,8 +261,21 @@ async function startServer() {
                 type: Type.ARRAY,
                 items: { type: Type.STRING }
               },
+              strengths: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
+              weaknesses: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
+              recommendedTopics: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
+              interviewReadiness: { type: Type.STRING },
             },
-            required: ["overallScore", "communicationScore", "technicalScore", "confidenceScore", "summary", "suggestions"],
+            required: ["overallScore", "communicationScore", "technicalScore", "confidenceScore", "summary", "suggestions", "strengths", "weaknesses", "recommendedTopics", "interviewReadiness"],
           },
         },
       });

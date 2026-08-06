@@ -10,6 +10,7 @@ interface InterviewSessionProps {
   difficulty: 'Easy' | 'Medium' | 'Hard';
   persona: InterviewerPersona;
   resumeOrJD?: string;
+  language?: string;
   onComplete: (questions: InterviewQuestion[]) => void;
   onCancel: () => void;
 }
@@ -221,7 +222,7 @@ const VoiceWaveVisualizer: React.FC<VoiceWaveVisualizerProps> = ({ isListening }
   );
 };
 
-export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, difficulty, persona, resumeOrJD, onComplete, onCancel }) => {
+export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, difficulty, persona, resumeOrJD, language = 'en-US', onComplete, onCancel }) => {
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [userInput, setUserInput] = useState('');
@@ -377,11 +378,12 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
     window.speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language || 'en-US';
     
     // Try to find a good voice
     const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) || 
-                          voices.find(v => v.lang.startsWith('en'));
+    const preferredVoice = voices.find(v => v.name.includes('Google') && v.lang.startsWith(language.split('-')[0])) || 
+                          voices.find(v => v.lang.startsWith(language.split('-')[0]));
     if (preferredVoice) utterance.voice = preferredVoice;
     
     utterance.rate = 1.0;
@@ -418,6 +420,7 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
         return;
       }
       const recognition = new SpeechRecognition();
+      recognition.lang = language || 'en-US';
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.onresult = (event: any) => {
@@ -464,7 +467,7 @@ export const InterviewSession: React.FC<InterviewSessionProps> = ({ domain, diff
         durationSeconds: Math.max(1, Math.round(speechDuration))
       } : undefined;
 
-      const evaluation = await evaluateResponse(currentQ.text, userInput, domain, persona, finalMetrics);
+      const evaluation = await evaluateResponse(currentQ.text, userInput, domain, persona, finalMetrics, language);
       if (!isMounted.current) return;
       
       setLastFeedback(evaluation);

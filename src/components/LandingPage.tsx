@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Briefcase, Code, Database, UserCheck, Play, Smartphone, Settings, Brain, Shield, Cloud, Cpu, FileText, Sparkles, Layout, Server, Monitor, Gamepad, BarChart3, ClipboardList, LineChart, Link2, PieChart, Network, Zap, Megaphone, Landmark, Wrench, Lightbulb, Building2, FlaskConical, CircuitBoard, Terminal, FileCode, Code2, User as UserIcon, UserPlus, UserMinus, ShieldAlert, Microscope } from 'lucide-react';
-import { Domain, InterviewerPersona } from '../types';
+import { Domain, InterviewerPersona, SUPPORTED_LANGUAGES } from '../types';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Upload, File } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -9,7 +9,7 @@ import { cn } from '../lib/utils';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 interface LandingPageProps {
-  onStart: (domain: Domain, resumeOrJD?: string, difficulty?: 'Easy' | 'Medium' | 'Hard', persona?: InterviewerPersona) => void;
+  onStart: (domain: Domain, resumeOrJD?: string, difficulty?: 'Easy' | 'Medium' | 'Hard', persona?: InterviewerPersona, language?: string) => void;
   user: User | null;
 }
 
@@ -667,6 +667,7 @@ const LogoImage: React.FC<{ src: string; alt: string; className?: string }> = ({
 export const LandingPage: React.FC<LandingPageProps> = ({ onStart, user }) => {
   const [resumeOrJD, setResumeOrJD] = useState('');
   const [persona, setPersona] = useState<InterviewerPersona>('Friendly');
+  const [language, setLanguage] = useState('en-US');
   const [activeCompany, setActiveCompany] = useState(companies[5]); // Default to Google
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'All' | 'MAANG' | 'Service' | 'Consulting' | 'Product'>('All');
@@ -728,7 +729,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, user }) => {
     // Check if the domain is one of our predefined companies to use its inherent difficulty
     const companyDifficulty = companies.find(c => c.name === domain)?.difficulty || 'Medium';
     
-    onStart(domain, resumeOrJD, companyDifficulty, persona);
+    onStart(domain, resumeOrJD, companyDifficulty, persona, language);
   };
 
   return (
@@ -835,7 +836,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, user }) => {
           
           <motion.button
             disabled={resumeOrJD.trim().length <= 10}
-            onClick={() => onStart('Personalized', resumeOrJD, 'Medium', persona)}
+            onClick={() => onStart('Personalized', resumeOrJD, 'Medium', persona, language)}
             className={`w-full font-bold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all group shadow-xl ${
               resumeOrJD.trim().length > 10 
                 ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/20' 
@@ -848,6 +849,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, user }) => {
           </motion.button>
         </div>
       </motion.div>
+
+      
+      {/* Language Selector */}
+      <div className="w-full max-w-4xl mb-12 flex flex-col items-center gap-6 sm:gap-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-orange-500/10">
+            <span className="text-orange-500 font-bold">🌐</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold">Choose Interview Language</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 w-full">
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => setLanguage(lang.code)}
+              className={`p-3 rounded-xl border transition-all ${
+                language === lang.code 
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' 
+                  : 'bg-[#151619] text-gray-400 border-white/5 hover:border-white/20 hover:bg-white/5'
+              }`}
+            >
+              <span className="text-sm font-semibold">{lang.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Interviewer Persona Selector */}
       <div className="w-full max-w-4xl mb-16 sm:mb-24 flex flex-col items-center gap-6 sm:gap-8">
