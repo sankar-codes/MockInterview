@@ -1,11 +1,11 @@
 import fs from 'fs';
-
 let content = fs.readFileSync('server.ts', 'utf8');
 
-// Replace unescaped backticks in prompt with single quotes
-content = content.replace(/Set `isCodingQuestion` to true/g, "Set 'isCodingQuestion' to true");
-content = content.replace(/Set `codingLanguage` to the/g, "Set 'codingLanguage' to the");
-content = content.replace(/ideal optimal code in `correctAnswer`/g, "ideal optimal code in 'correctAnswer'");
-content = content.replace(/The `codeComplexity` object MUST/g, "The 'codeComplexity' object MUST");
+content = content.replace(/catch \(e: any\) \{\s*if \(e\.message\?\.includes\("API key not valid"\) \|\| e\.message\?\.includes\("API_KEY_INVALID"\)\) \{\s*return res\.status\(500\)\.json\(\{ error: "Invalid Gemini API Key\. Please provide a valid key in your settings\." \}\);\s*\}\s*console\.error\(e\); \|\| e\.status === "INVALID_ARGUMENT" \|\| e\.message\?\.includes\("API_KEY_INVALID"\)\) \{\s*return res\.status\(500\)\.json\(\{ error: "Invalid Gemini API Key\. Please provide a valid key in your settings\."(?:, details: e\.message, status: e\.status)? \}\);\s*\}/g,
+`catch (e: any) {
+      if (e.message?.includes("API key not valid") || e.status === "INVALID_ARGUMENT" || e.message?.includes("API_KEY_INVALID")) {
+        return res.status(500).json({ error: "Invalid Gemini API Key. Please provide a valid key in your settings." });
+      }
+      console.error(e);`);
 
 fs.writeFileSync('server.ts', content);
