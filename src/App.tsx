@@ -74,10 +74,12 @@ export default function App() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setIsAuthLoading(false);
       if (currentUser) {
         // Fetch past interviews
         const q = query(
@@ -152,6 +154,14 @@ export default function App() {
     setInterviewResults(interview.questions);
     setView('feedback');
   };
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">

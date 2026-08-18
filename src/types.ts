@@ -125,5 +125,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'it-IT', name: 'Italian' },
   { code: 'ko-KR', name: 'Korean' },
   { code: 'ta-IN', name: 'Tamil' },
-  { code: 'te-IN', name: 'Telugu' }
+  { code: 'te-IN', name: 'Telugu' },
+  { code: 'ml-IN', name: 'Malayalam' },
+  { code: 'kn-IN', name: 'Kannada' }
 ];
