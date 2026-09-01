@@ -27,6 +27,10 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
+    if (!isConfigured || !auth) {
+      setIsAuthLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
@@ -40,7 +44,7 @@ export default function App() {
 
 
 
-  const handleLogout = async () => { await signOut(auth); };
+  const handleLogout = async () => { if (auth) await signOut(auth); };
 
   const handleStart = (domain: Domain, jd?: string, diff: 'Easy' | 'Medium' | 'Hard' = 'Medium', selectedPersona: InterviewerPersona = 'Friendly', selectedLanguage: string = 'en-US') => {
     if (!user) {
