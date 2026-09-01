@@ -4,9 +4,10 @@ import { Briefcase, Layers, Wifi, Code, Database, UserCheck, Play, Smartphone, S
 import { Domain, InterviewerPersona, SUPPORTED_LANGUAGES } from '../types';
 import { HRQuestionsSection } from './HRQuestionsSection';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import { cn } from '../lib/utils';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 interface LandingPageProps {
   onStart: (domain: Domain, resumeOrJD?: string, difficulty?: 'Easy' | 'Medium' | 'Hard', persona?: InterviewerPersona, language?: string) => void;
@@ -264,8 +265,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, user }) => {
                   value={resumeOrJD}
                   onChange={(e) => setResumeOrJD(e.target.value)}
                   placeholder="Or paste your context here..."
-                  className="w-full bg-black/50 border border-white/10 rounded-xl p-4 min-h-[120px] text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all resize-y text-sm font-mono"
+                  className="w-full bg-black/50 border border-white/10 rounded-xl p-4 min-h-[120px] text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all resize-y text-sm font-mono mb-4"
                 />
+                
+                {resumeOrJD.trim() && (
+                  <button 
+                    onClick={() => handleDomainClick('Personalized')}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 animate-in fade-in zoom-in duration-300"
+                  >
+                    <Play className="w-5 h-5" />
+                    Start Resume/JD Interview
+                  </button>
+                )}
               </div>
 
             </div>

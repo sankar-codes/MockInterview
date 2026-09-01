@@ -1,4 +1,5 @@
 import fs from 'fs';
 let content = fs.readFileSync('tsconfig.json', 'utf8');
-content = content.replace('"allowImportingTsExtensions": true,', '"allowImportingTsExtensions": true,\n    "resolveJsonModule": true,');
-fs.writeFileSync('tsconfig.json', content);
+const data = JSON.parse(content);
+data.compilerOptions.types = ["vite/client"];
+fs.writeFileSync('tsconfig.json', JSON.stringify(data, null, 2));

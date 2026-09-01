@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { auth, isConfigured } from './lib/firebase';
-import { AlertCircle } from 'lucide-react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
@@ -9,7 +8,7 @@ import { FeedbackDashboard } from './components/FeedbackDashboard';
 import { Dashboard } from './components/Dashboard';
 import { ChatbotWidget } from './components/ChatbotWidget';
 import { Domain, InterviewQuestion, InterviewerPersona } from './types';
-import { LogIn, LogOut, LayoutDashboard, User as UserIcon, Play, Mail, X, Loader2, Eye, EyeOff, Download } from 'lucide-react';
+import { AlertCircle, LogIn, LogOut, LayoutDashboard, User as UserIcon, Play, Mail, X, Loader2, Eye, EyeOff, Download } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -27,10 +26,6 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    if (!isConfigured || !auth) {
-      setIsAuthLoading(false);
-      return;
-    }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
@@ -44,7 +39,7 @@ export default function App() {
 
 
 
-  const handleLogout = async () => { if (auth) await signOut(auth); };
+  const handleLogout = async () => { await signOut(auth); };
 
   const handleStart = (domain: Domain, jd?: string, diff: 'Easy' | 'Medium' | 'Hard' = 'Medium', selectedPersona: InterviewerPersona = 'Friendly', selectedLanguage: string = 'en-US') => {
     if (!user) {
