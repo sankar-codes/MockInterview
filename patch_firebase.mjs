@@ -1,6 +1,5 @@
 import fs from 'fs';
-
-const newFirebaseTs = `import { initializeApp } from 'firebase/app';
+const code = `import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
@@ -14,11 +13,14 @@ const firebaseConfig = {
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-`;
+// Graceful check for missing config to prevent complete app crash
+const isConfigured = !!firebaseConfig.apiKey;
 
-fs.writeFileSync('src/lib/firebase.ts', newFirebaseTs);
-console.log("firebase.ts updated to use env vars");
+export const app = isConfigured ? initializeApp(firebaseConfig) : null;
+export const db = isConfigured ? getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)') : null as any;
+export const auth = isConfigured ? getAuth(app) : null as any;
+export const googleProvider = new GoogleAuthProvider();
+
+export { isConfigured };
+`;
+fs.writeFileSync('src/lib/firebase.ts', code);

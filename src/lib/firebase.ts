@@ -12,7 +12,12 @@ const firebaseConfig = {
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
-export const auth = getAuth(app);
+// Graceful check for missing config to prevent complete app crash
+const isConfigured = !!firebaseConfig.apiKey;
+
+export const app = isConfigured ? initializeApp(firebaseConfig) : null;
+export const db = isConfigured ? getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)') : null as any;
+export const auth = isConfigured ? getAuth(app) : null as any;
 export const googleProvider = new GoogleAuthProvider();
+
+export { isConfigured };
