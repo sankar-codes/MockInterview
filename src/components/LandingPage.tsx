@@ -178,7 +178,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, user }) => {
         
         {/* Left Sidebar - Settings & Resume */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-[#151619]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-6 sticky top-6">
+          <div className="bg-[#151619]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-6 sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
               <Settings className="w-5 h-5 text-orange-500" />
               Interview Setup
@@ -268,15 +268,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, user }) => {
                   className="w-full bg-black/50 border border-white/10 rounded-xl p-4 min-h-[120px] text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all resize-y text-sm font-mono mb-4"
                 />
                 
-                {resumeOrJD.trim() && (
+                {resumeOrJD.trim().length > 0 ? (
                   <button 
                     onClick={() => handleDomainClick('Personalized')}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 animate-in fade-in zoom-in duration-300"
+                    className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20"
                   >
                     <Play className="w-5 h-5" />
                     Start Resume/JD Interview
                   </button>
-                )}
+                ) : null}
               </div>
 
             </div>
